@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Diamond Price Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A0E1A;
+      --surface:   #111827;
+      --card:      #161D2F;
+      --border:    rgba(79,195,247,0.15);
+      --accent:    #4FC3F7;
+      --gold:      #C9A84C;
+      --text:      #E8EAF0;
+      --muted:     #7B8599;
+      --error:     #F87171;
+      --success:   #34D399;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── STAR FIELD ── */
+    #stars {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse at 20% 30%, rgba(79,195,247,0.04) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 70%, rgba(201,168,76,0.04) 0%, transparent 60%);
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.5rem 3rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .logo-gem { width: 32px; height: 32px; }
+    .badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent);
+      border: 1px solid var(--accent); border-radius: 999px;
+      padding: 0.2rem 0.75rem;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 5;
+      text-align: center;
+      padding: 5rem 2rem 3rem;
+    }
+    .hero-eyebrow {
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900; line-height: 1.05;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.05rem; color: var(--muted); max-width: 500px; margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    /* ── DIAMOND SVG ── */
+    .diamond-wrap {
+      display: flex; justify-content: center;
+      margin-bottom: 0; position: relative; z-index: 5;
+    }
+    .diamond-svg-container {
+      position: relative; width: 140px; height: 140px;
+    }
+    .diamond-svg-container svg { width: 100%; height: 100%; }
+    .diamond-glow {
+      position: absolute; inset: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,195,247,0.18) 0%, transparent 70%);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50%       { opacity: 1;   transform: scale(1.15); }
+    }
+    .diamond-main {
+      filter: drop-shadow(0 0 18px rgba(79,195,247,0.5));
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+
+    /* ── MAIN FORM SECTION ── */
+    .main {
+      position: relative; z-index: 5;
+      max-width: 960px; margin: 0 auto;
+      padding: 2.5rem 2rem 5rem;
+    }
+
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+
+    .form-header {
+      background: linear-gradient(135deg, rgba(79,195,247,0.08), rgba(201,168,76,0.06));
+      border-bottom: 1px solid var(--border);
+      padding: 1.75rem 2.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .form-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem; font-weight: 700;
+    }
+    .form-header small {
+      font-size: 0.75rem; color: var(--muted); font-weight: 400;
+    }
+    .form-dots { display: flex; gap: 6px; }
+    .form-dots span {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .form-dots span:nth-child(1) { background: #F87171; }
+    .form-dots span:nth-child(2) { background: #FBBF24; }
+    .form-dots span:nth-child(3) { background: #34D399; }
+
+    .form-body { padding: 2.25rem; }
+
+    /* Section labels */
+    .section-label {
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 1rem; padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Grid */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+    .grid-3-long { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+
+    /* Field */
+    .field { display: flex; flex-direction: column; gap: 0.45rem; }
+    .field label {
+      font-size: 0.78rem; font-weight: 500; color: var(--muted);
+      letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .field label .unit {
+      font-size: 0.68rem; color: var(--accent); opacity: 0.7;
+    }
+    .field input, .field select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.92rem;
+      padding: 0.7rem 0.9rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,195,247,0.12);
+    }
+    .field input::placeholder { color: var(--muted); opacity: 0.5; }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234FC3F7' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.9rem center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+    .field select option { background: #1a2236; }
+
+    /* Input with hint */
+    .field .hint {
+      font-size: 0.68rem; color: var(--muted); opacity: 0.7;
+    }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 0.75rem 0 1.75rem; }
+
+    /* ── SUBMIT ── */
+    .submit-row {
+      display: flex; align-items: center; gap: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .btn-predict {
+      flex: 1;
+      background: linear-gradient(135deg, #1a6fa8 0%, #0e4d7a 100%);
+      border: 1px solid rgba(79,195,247,0.4);
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 0.9rem 2rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    }
+    .btn-predict:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(79,195,247,0.25);
+    }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict.loading { pointer-events: none; opacity: 0.8; }
+    .btn-predict .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn-predict.loading .spinner { display: block; }
+    .btn-predict.loading .btn-text { opacity: 0.6; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 500;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-reset:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── RESULT CARD ── */
+    .result-card {
+      margin-top: 1.75rem;
+      background: linear-gradient(135deg, rgba(79,195,247,0.06), rgba(201,168,76,0.05));
+      border: 1px solid rgba(79,195,247,0.25);
+      border-radius: 16px;
+      padding: 2rem;
+      display: none;
+      animation: fadeUp 0.4s ease;
+    }
+    .result-card.visible { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .result-card .result-label {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+    .result-price {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .result-sub {
+      font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem;
+    }
+
+    /* Error */
+    .error-msg {
+      display: none; margin-top: 1rem;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.25);
+      border-radius: 10px; padding: 0.85rem 1.1rem;
+      font-size: 0.82rem; color: var(--error);
+      animation: fadeUp 0.3s ease;
+    }
+    .error-msg.visible { display: block; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      position: relative; z-index: 5;
+      display: flex; justify-content: center; gap: 3rem;
+      padding: 2rem 2rem 0;
+      margin-bottom: -1rem;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 700; color: var(--text);
+    }
+    .stat-num span { color: var(--accent); }
+    .stat-lbl {
+      font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em;
+      text-transform: uppercase; margin-top: 0.15rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 5;
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem; color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── TOOLTIP ── */
+    [data-tip] { position: relative; cursor: help; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: #1e2d45; color: var(--text);
+      font-size: 0.68rem; white-space: nowrap;
+      padding: 0.35rem 0.65rem; border-radius: 6px;
+      border: 1px solid var(--border);
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 100;
+    }
+    [data-tip]:hover::after { opacity: 1; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 700px) {
+      header { padding: 1rem 1.25rem; }
+      .stats-bar { gap: 1.5rem; }
+      .grid-3, .grid-3-long { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .form-body { padding: 1.5rem; }
+      .submit-row { flex-direction: column; }
+      .btn-reset { width: 100%; }
+    }
+    @media (max-width: 430px) {
+      .grid-3, .grid-3-long { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .diamond-main, .diamond-glow { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<!-- HEADER -->
+<header>
+  <a href="#" class="logo">
+    <svg class="logo-gem" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="16,2 28,11 24,30 8,30 4,11" fill="none" stroke="#4FC3F7" stroke-width="1.5"/>
+      <polygon points="16,2 28,11 16,8 4,11" fill="rgba(79,195,247,0.15)" stroke="#4FC3F7" stroke-width="1"/>
+      <polygon points="16,8 28,11 24,30 8,30 4,11" fill="rgba(201,168,76,0.08)" stroke="#C9A84C" stroke-width="0.8"/>
+    </svg>
+    Diamondify
+  </a>
+  <span class="badge">ML Powered</span>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-eyebrow">Kaggle Diamonds Dataset · Random Forest</p>
+  <h1>Predict the value of<br/><span>any diamond</span></h1>
+  <p>Enter the 4Cs and physical dimensions to get an instant price estimate powered by a machine learning model trained on 53,000+ diamonds.</p>
+</section>
+
+<div class="diamond-wrap">
+  <div class="diamond-svg-container">
+    <div class="diamond-glow"></div>
+    <svg class="diamond-main" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Crown top facets -->
+      <polygon points="60,8 90,38 60,30 30,38" fill="rgba(79,195,247,0.22)" stroke="#4FC3F7" stroke-width="1.2"/>
+      <!-- Left crown -->
+      <polygon points="60,8 30,38 15,38" fill="rgba(79,195,247,0.12)" stroke="#4FC3F7" stroke-width="1"/>
+      <!-- Right crown -->
+      <polygon points="60,8 90,38 105,38" fill="rgba(201,168,76,0.15)" stroke="#C9A84C" stroke-width="1"/>
+      <!-- Main girdle belt -->
+      <polygon points="15,38 30,38 60,30 90,38 105,38 60,112" fill="rgba(79,195,247,0.07)" stroke="#4FC3F7" stroke-width="1.4"/>
+      <!-- Inner pavillion lines -->
+      <line x1="60" y1="30" x2="60" y2="112" stroke="rgba(79,195,247,0.3)" stroke-width="0.8"/>
+      <line x1="15" y1="38" x2="90" y2="38" stroke="rgba(79,195,247,0.2)" stroke-width="0.8"/>
+      <line x1="105" y1="38" x2="30" y2="38" stroke="rgba(201,168,76,0.2)" stroke-width="0.6"/>
+      <!-- Star facets -->
+      <polygon points="60,8 60,30 45,24" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="0.6"/>
+      <polygon points="60,8 60,30 75,24" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" stroke-width="0.6"/>
+      <!-- Culet point highlight -->
+      <circle cx="60" cy="112" r="2" fill="#4FC3F7" opacity="0.6"/>
+    </svg>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">53<span>K+</span></div>
+    <div class="stat-lbl">Training Samples</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">9</div>
+    <div class="stat-lbl">Features</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num"><span>$</span>18K</div>
+    <div class="stat-lbl">Avg Diamond Value</div>
+  </div>
+</div>
+
+<!-- MAIN FORM -->
+<main class="main">
+  <div class="form-card">
+    <div class="form-header">
+      <div>
+        <h2>Diamond Parameters</h2>
+        <small>All fields are required</small>
+      </div>
+      <div class="form-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div class="form-body">
+
+      <!-- 4Cs -->
+      <div class="section-label">The 4Cs — Quality Attributes</div>
+      <div class="grid-3" style="grid-template-columns: 1.2fr 1fr 1fr;">
+
+        <div class="field">
+          <label data-tip="Weight of the diamond in carats">
+            Carat Weight <span class="unit">ct</span>
+          </label>
+          <input type="number" id="carat" placeholder="0.23" step="0.01" min="0.2" max="5.01"/>
+          <span class="hint">Range: 0.20 – 5.01</span>
+        </div>
+
+        <div class="field">
+          <label data-tip="Cut quality affects brilliance">Cut</label>
+          <select id="cut">
+            <option value="" disabled selected>Select…</option>
+            <option value="Fair">Fair</option>
+            <option value="Good">Good</option>
+            <option value="Very Good">Very Good</option>
+            <option value="Premium">Premium</option>
+            <option value="Ideal">Ideal</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label data-tip="Color grade from D (colorless) to J (slight color)">Color</label>
+          <select id="color">
+            <option value="" disabled selected>Select…</option>
+            <option value="D">D — Colorless</option>
+            <option value="E">E — Colorless</option>
+            <option value="F">F — Colorless</option>
+            <option value="G">G — Near Colorless</option>
+            <option value="H">H — Near Colorless</option>
+            <option value="I">I — Near Colorless</option>
+            <option value="J">J — Slight Color</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label data-tip="Clarity grade — number of internal inclusions">Clarity</label>
+          <select id="clarity">
+            <option value="" disabled selected>Select…</option>
+            <option value="IF">IF — Internally Flawless</option>
+            <option value="VVS1">VVS1</option>
+            <option value="VVS2">VVS2</option>
+            <option value="VS1">VS1</option>
+            <option value="VS2">VS2</option>
+            <option value="SI1">SI1</option>
+            <option value="SI2">SI2</option>
+            <option value="I1">I1 — Included</option>
+          </select>
+        </div>
+        <div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Physical Measurements -->
+      <div class="section-label">Physical Measurements</div>
+      <div class="grid-3">
+
+        <div class="field">
+          <label data-tip="Total depth percentage: z / mean(x,y)">
+            Depth % <span class="unit">%</span>
+          </label>
+          <input type="number" id="depth" placeholder="61.5" step="0.1" min="43" max="79"/>
+        </div>
+
+        <div class="field">
+          <label data-tip="Width of the top facet relative to the widest point">
+            Table % <span class="unit">%</span>
+          </label>
+          <input type="number" id="table" placeholder="55" step="0.5" min="43" max="95"/>
+        </div>
+
+        <div></div>
+
+      </div>
+
+      <div class="grid-3-long">
+        <div class="field">
+          <label data-tip="Length in mm (x-axis)">
+            Length — x <span class="unit">mm</span>
+          </label>
+          <input type="number" id="x" placeholder="3.95" step="0.01" min="0"/>
+        </div>
+
+        <div class="field">
+          <label data-tip="Width in mm (y-axis)">
+            Width — y <span class="unit">mm</span>
+          </label>
+          <input type="number" id="y" placeholder="3.98" step="0.01" min="0"/>
+        </div>
+
+        <div class="field">
+          <label data-tip="Depth in mm (z-axis)">
+            Depth — z <span class="unit">mm</span>
+          </label>
+          <input type="number" id="z" placeholder="2.43" step="0.01" min="0"/>
+        </div>
+      </div>
+
+      <!-- SUBMIT -->
+      <div class="submit-row">
+        <button class="btn-predict" id="predictBtn" onclick="predict()">
+          <div class="spinner"></div>
+          <span class="btn-text">Estimate Price</span>
+        </button>
+        <button class="btn-reset" onclick="resetForm()">Clear</button>
+      </div>
+
+      <!-- ERROR -->
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- RESULT -->
+      <div class="result-card" id="resultCard">
+        <div class="result-label">Estimated Market Price</div>
+        <div class="result-price" id="resultPrice">$0</div>
+        <div class="result-sub" id="resultSub">Based on the parameters you entered.</div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  Built with <a href="https://fastapi.tiangolo.com/" target="_blank">FastAPI</a> ·
+  Trained on <a href="https://www.kaggle.com/datasets/shivam2503/diamonds" target="_blank">Kaggle Diamonds Dataset</a> ·
+  Model: SVR
+</footer>
+
+<script>
+  /* ─── STAR FIELD ─── */
+  (function() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const el = document.getElementById('stars');
+    el.appendChild(canvas);
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; draw(); };
+    const stars = Array.from({length: 120}, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 1.2 + 0.2,
+      a: Math.random()
+    }));
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      stars.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${s.a * 0.6})`;
+        ctx.fill();
+      });
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    // Twinkle
+    setInterval(() => {
+      stars.forEach(s => { s.a = 0.2 + Math.random() * 0.8; });
+      draw();
+    }, 2000);
+  })();
+
+  /* ─── PREDICT ─── */
+  async function predict() {
+    const btn = document.getElementById('predictBtn');
+    const errEl = document.getElementById('errorMsg');
+    const resCard = document.getElementById('resultCard');
+
+    errEl.classList.remove('visible');
+    resCard.classList.remove('visible');
+
+    // Gather + validate
+    const fields = {
+      carat:   parseFloat(document.getElementById('carat').value),
+      cut:     document.getElementById('cut').value,
+      color:   document.getElementById('color').value,
+      clarity: document.getElementById('clarity').value,
+      depth:   parseFloat(document.getElementById('depth').value),
+      table:   parseFloat(document.getElementById('table').value),
+      x:       parseFloat(document.getElementById('x').value),
+      y:       parseFloat(document.getElementById('y').value),
+      z:       parseFloat(document.getElementById('z').value),
+    };
+
+    const numericKeys = ['carat','depth','table','x','y','z'];
+    const stringKeys  = ['cut','color','clarity'];
+    const badNum = numericKeys.filter(k => isNaN(fields[k]) || fields[k] === null);
+    const badStr = stringKeys.filter(k => !fields[k]);
+    if (badNum.length || badStr.length) {
+      showError('Please fill in all fields before estimating.');
+      return;
+    }
+
+    btn.classList.add('loading');
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error (${res.status})`);
+      }
+
+      const data = await res.json();
+      const price = data.prediction_price;
+
+      animatePrice(price);
+      resCard.classList.add('visible');
+      document.getElementById('resultSub').textContent =
+        `${fields.carat} ct · ${fields.cut} cut · Color ${fields.color} · ${fields.clarity} clarity`;
+
+    } catch(e) {
+      showError(e.message || 'Could not reach the prediction API. Make sure the server is running.');
+    } finally {
+      btn.classList.remove('loading');
+    }
+  }
+
+  function animatePrice(target) {
+    const el = document.getElementById('resultPrice');
+    const duration = 900;
+    const start = performance.now();
+    const from = 0;
+    function step(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = Math.round(from + (target - from) * eased);
+      el.textContent = '$' + val.toLocaleString('en-US');
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function resetForm() {
+    ['carat','depth','table','x','y','z'].forEach(id => document.getElementById(id).value = '');
+    ['cut','color','clarity'].forEach(id => document.getElementById(id).selectedIndex = 0);
+    document.getElementById('errorMsg').classList.remove('visible');
+    document.getElementById('resultCard').classList.remove('visible');
+  }
+
+  /* ─── ENTER KEY ─── */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') predict();
+  });
+</script>
+</body>
+</html>
